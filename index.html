@@ -871,6 +871,7 @@ const GROUPS = [
     ok:p => p.category_group_code === 'PM9' },
   { key:'port', title:'선착장 · 여객터미널', kws:['여객터미널','선착장'], max:2,
     ok:p => /^교통,수송 > 교통시설 > (여객선터미널|선착장,항만시설|항구,포구)/.test(p.category_name || '')
+            && /선착장|터미널|바다역|항$|항구|포구|부두|나루|대합실/.test(p.place_name)
             && !/방파제|유람선/.test(p.category_name + p.place_name) && !DEPT.test(p.place_name) }
 ];
 const FAR_KM = 60;      // 너무 먼 곳은 목록에서 빼요
