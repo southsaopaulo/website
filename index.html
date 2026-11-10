@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f6f1">
+<title>곁에 — 건강 도우미</title>
+<style>
+:root{
+  --ink:#16261f; --sub:#4a5a52; --bg:#f7f6f1; --card:#ffffff; --line:#cdd6d0;
+  --green:#14614a; --green-soft:#e6f1eb; --red:#b3261e; --red-soft:#fdecea; --red-line:#efb9b3;
+  --amber-soft:#fff5d9; --amber-line:#e7c35a; --focus:#f0a020;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:24px;line-height:1.5;word-break:keep-all}
+body.xl{font-size:28px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;touch-action:manipulation}
+a{color:inherit}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px;border-radius:12px}
+h1{font-size:1.3em;line-height:1.3;margin:0 0 20px;letter-spacing:-.5px}
+h1:focus{outline:none}
+h2{font-size:1.05em;margin:28px 0 12px}
+p{margin:0 0 16px}
+
+/* 상단 */
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));background:var(--bg);border-bottom:1px solid var(--line)}
+.brand{font-size:26px;font-weight:800;letter-spacing:-1px}
+.brand small{font-size:15px;font-weight:700;color:var(--green);background:var(--green-soft);padding:2px 8px;border-radius:6px;margin-left:8px;vertical-align:middle;letter-spacing:0}
+.call119{display:inline-flex;align-items:center;gap:6px;min-height:56px;padding:0 20px;border-radius:28px;background:var(--red);color:#fff;font-weight:800;font-size:24px;text-decoration:none}
+
+.wrap{max-width:480px;margin:0 auto;padding:22px 16px 60px}
+.row.big{min-height:120px;font-size:1.25em;line-height:1.3}
+.row.big .emo{font-size:48px;width:56px}
+.linkbtn{display:block;margin:26px auto 0;min-height:60px;padding:8px 16px;font-weight:700;color:var(--sub);text-decoration:underline;text-underline-offset:6px}
+.nextmed{display:flex;align-items:center;gap:14px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:26px}
+.nextmed .t{flex:1;font-weight:800;line-height:1.35}
+.nextmed .t small{display:block;font-size:20px;color:var(--sub);font-weight:700}
+.nextmed button{flex:none;min-height:64px;padding:0 18px;border-radius:14px;background:var(--green);color:#fff;font-weight:800}
+.btn-white.btn-big{border-width:3px}
+
+/* 지도 */
+.map{width:100%;height:360px;border-radius:18px;border:2px solid var(--line);background:#e6ebe7;margin-bottom:16px;overflow:hidden}
+.ov{background:#fff;border:3px solid var(--green);border-radius:12px;padding:4px 10px;font-size:18px;font-weight:800;white-space:nowrap;color:var(--ink);box-shadow:0 2px 8px #0002}
+.ov.me{border-color:#1a5fb4;color:#1a5fb4}
+.place{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:12px}
+.place b{display:block;font-size:1.05em}
+.place .meta{font-size:20px;color:var(--sub);font-weight:700;margin-bottom:12px}
+.place .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.place .two .btn{min-height:64px;margin:0}
+
+/* 목록 버튼 */
+.list{display:grid;gap:12px}
+.row{display:flex;align-items:center;gap:16px;width:100%;min-height:80px;padding:14px 18px;background:var(--card);border:2px solid var(--line);border-radius:18px;text-align:left;font-weight:750;font-size:1.05em}
+.row .emo{font-size:36px;line-height:1;width:44px;text-align:center;flex:none}
+.row .label{flex:1}
+.row .go{font-size:36px;color:#8a9a92;font-weight:400}
+.row:active{background:var(--green-soft)}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:76px;padding:14px 18px;border-radius:18px;font-weight:800;font-size:1em;text-decoration:none;text-align:center}
+.btn + .btn{margin-top:12px}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-white{background:var(--card);border:2px solid var(--line)}
+.btn-big{min-height:96px;font-size:1.15em}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.6}
+
+.note{font-size:20px;color:var(--sub);margin-top:22px}
+.box{border-radius:18px;padding:18px 20px;margin-bottom:18px}
+.box-red{background:var(--red-soft);border:2px solid var(--red-line)}
+.box-amber{background:var(--amber-soft);border:2px solid var(--amber-line)}
+.box-green{background:var(--green-soft);border:2px solid #bcd8c9}
+.box ul{margin:0;padding-left:1.1em}
+.box li{margin:6px 0;font-weight:700}
+.tag{display:inline-block;font-size:17px;font-weight:700;color:var(--green);background:var(--green-soft);padding:2px 8px;border-radius:6px;vertical-align:middle}
+
+/* 흐름 화면 */
+#flow{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#flow[hidden]{display:none}
+.flow-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));background:var(--bg);border-bottom:1px solid var(--line)}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:56px;padding:0 18px;border-radius:28px;background:var(--card);border:2px solid var(--line);font-weight:800}
+.count{font-size:22px;font-weight:800;color:var(--green);margin-bottom:6px}
+.step{font-size:1.25em;font-weight:800;line-height:1.45;margin:0 0 28px}
+.steps{margin:0 0 20px;padding-left:1.3em}
+.steps li{margin:0 0 14px;font-weight:700;line-height:1.45}
+.dont li{list-style:none;margin-left:-1.3em}
+.dont li::before{content:"✕ ";color:var(--red);font-weight:900}
+.speak{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:60px;border-radius:16px;background:var(--card);border:2px solid var(--line);font-weight:700;margin-bottom:12px}
+.quote{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:18px;font-weight:800;margin-bottom:18px}
+textarea,input[type=text],input[type=number]{display:block;width:100%;min-height:72px;border:2px solid #a8b8ae;border-radius:16px;background:#fff;padding:14px 16px;font-size:1em}
+textarea{min-height:150px;resize:vertical}
+label.field{display:block;font-weight:800;margin:22px 0 10px}
+.summary dt{font-size:20px;color:var(--sub);font-weight:700;margin-top:10px}
+.summary dd{margin:0 0 4px;font-weight:800}
+
+/* 약 */
+.med{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}
+.med .when{font-size:1.15em;font-weight:900}
+.med .name{font-weight:700;margin:2px 0 14px}
+.med.done{border-color:#bcd8c9;background:var(--green-soft)}
+.med.done .btn{background:transparent;color:var(--green);border:2px solid #bcd8c9}
+
+/* 선택 칩 */
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{min-height:60px;padding:10px 18px;border-radius:30px;border:2px solid var(--line);background:var(--card);font-weight:750}
+.chip[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.chip[aria-pressed="true"]::before{content:"✓ "}
+
+.contact{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:12px}
+.contact b{display:block;font-size:1em}
+.contact span{font-size:20px;color:var(--sub)}
+.contact button{flex:none;min-height:60px;padding:0 18px;border-radius:14px;background:var(--green);color:#fff;font-weight:800}
+
+/* 하단 메뉴 */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.nav-in{display:grid;grid-template-columns:repeat(3,1fr);max-width:480px;margin:0 auto;padding:8px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;border-radius:16px;font-weight:750;font-size:21px;color:var(--sub)}
+.tab .emo{font-size:28px;line-height:1}
+.tab[aria-current="page"]{background:var(--green-soft);color:var(--green);font-weight:900}
+.page[hidden]{display:none}
+
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:50;max-width:calc(100vw - 32px);width:max-content;padding:14px 20px;border-radius:16px;background:var(--ink);color:#fff;font-size:21px;font-weight:700;box-shadow:0 6px 24px #0003}
+.toast[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:350px){body{font-size:22px}.row .emo{font-size:30px;width:36px}.call119{padding:0 14px}}
+
+/* ===== 글자만으로 크고 또렷하게 ===== */
+body{font-size:26px}
+body.xl{font-size:30px}
+h1{font-size:1.45em;font-weight:900;letter-spacing:-1px;margin-bottom:22px}
+h2{font-size:1.1em;font-weight:900;color:var(--sub);margin:32px 0 14px}
+.brand{font-size:28px;font-weight:900}
+.call119{min-height:62px;padding:0 22px;font-size:27px;font-weight:900;letter-spacing:-.5px}
+.row{min-height:96px;padding:18px 22px;border-width:3px;font-size:1.3em;font-weight:900;letter-spacing:-.5px;line-height:1.3}
+.row .go{font-size:48px;font-weight:300;color:#7b8c84}
+.row.big{min-height:156px;font-size:1.7em;letter-spacing:-1px;line-height:1.25;border-color:#9fb2a7}
+.btn{min-height:86px;font-size:1.2em;font-weight:900;letter-spacing:-.5px}
+.btn-big{min-height:110px;font-size:1.4em;letter-spacing:-1px}
+.btn-white{border-width:3px;border-color:#9fb2a7}
+.nextmed{padding:18px 20px;border-width:3px;flex-direction:column;align-items:stretch;gap:12px}
+.nextmed button{width:100%}
+.nextmed .t{font-size:1.1em;font-weight:900}
+.nextmed .t small{font-size:22px;font-weight:800}
+.nextmed button{min-height:72px;padding:0 20px;font-size:1.05em;font-weight:900}
+.linkbtn{font-size:24px;font-weight:800;min-height:68px}
+.step{font-size:1.45em;font-weight:900;letter-spacing:-.5px}
+.count{font-size:26px;font-weight:900}
+.steps li,.box li{font-weight:800}
+.speak{min-height:72px;font-size:1.05em;font-weight:900;border-width:3px}
+.chip{min-height:70px;padding:10px 22px;font-size:1.05em;font-weight:900;border-width:3px}
+.contact{border-width:3px}
+.contact b{font-size:1.15em;font-weight:900}
+.contact button{min-height:70px;padding:0 22px;font-size:1.05em;font-weight:900}
+.person{background:var(--card);border:3px solid var(--line);border-radius:18px;padding:18px 20px;margin-bottom:14px}
+.person b{display:block;font-size:1.2em;font-weight:900}
+.person .who{font-size:22px;font-weight:800;color:var(--sub)}
+.person .num{font-size:1.15em;font-weight:900;letter-spacing:.5px;margin:4px 0 14px}
+.person .num.empty{color:var(--red);font-size:1em}
+.person .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.person .two .btn{min-height:76px;margin:0;font-size:1.05em}
+input[type=tel]::placeholder{font-weight:600;color:#8a958f}
+input[type=tel]{display:block;width:100%;min-height:84px;border:3px solid #9fb2a7;border-radius:16px;background:#fff;padding:14px 18px;font-size:1.3em;font-weight:900;letter-spacing:1px}
+.place{border-width:3px}
+.place b{font-size:1.15em;font-weight:900}
+.place .two .btn{min-height:72px;font-size:1.05em}
+.back{min-height:62px;font-size:1.05em;font-weight:900;border-width:3px}
+.ov{font-size:20px;font-weight:900}
+@media (max-width:350px){body{font-size:23px}.row.big{font-size:1.5em}}
+
+/* ===== 꽉 채우는 고대비 화면 ===== */
+:root{--hurt:#b45309;--sick:#1d4ed8;--voice:#14614a;--write:#334155}
+.wrap{padding-bottom:124px}
+#flowBody{padding-bottom:124px}
+.top{padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+.topinfo{min-height:60px;padding:0 20px;border-radius:14px;background:#fff;border:3px solid var(--ink);font-size:24px;font-weight:900}
+.sosbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;justify-content:center;min-height:88px;padding-bottom:env(safe-area-inset-bottom);background:var(--red);color:#fff;font-size:34px;font-weight:900;letter-spacing:-.5px;text-decoration:none;box-shadow:0 -4px 18px #0004}
+.sosbar:active{background:#8f1d17}
+.home{display:block}
+.home h1{font-size:30px;margin:4px 0 12px}
+.home h2{margin:22px 0 10px}
+.home .nextmed{margin-bottom:0;padding:14px 16px}
+.home .nextmed .t{font-size:1em}
+.tiles{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;height:max(320px,calc(100dvh - 82px - 70px - 88px - 34px))}
+.tile{display:flex;align-items:center;justify-content:center;text-align:center;min-height:150px;padding:10px;border-radius:20px;color:#fff;font-size:34px;font-weight:900;line-height:1.22;letter-spacing:-1px;box-shadow:inset 0 -7px 0 #0003}
+.tile:active{filter:brightness(.85);transform:translateY(2px)}
+.t-hurt{background:var(--hurt)}.t-sick{background:var(--sick)}.t-voice{background:var(--voice)}.t-write{background:var(--write)}
+.calls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.call{min-height:100px;padding:8px 4px;border-radius:16px;background:#fff;border:3px solid var(--ink);font-size:22px;font-weight:900;line-height:1.25;letter-spacing:-.5px}
+.call small{display:block;margin-top:4px;font-size:20px;font-weight:900;color:var(--green)}
+.call.empty small{color:var(--red)}
+.infobar{width:100%;min-height:76px;margin-top:10px;border-radius:16px;background:#e7ece8;border:3px solid #8fa398;font-size:25px;font-weight:900}
+.home .note{margin-top:14px}
+.flow-top{padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+.back.wide{display:flex;width:100%;justify-content:center;min-height:74px;font-size:28px;border:3px solid var(--ink);border-radius:16px}
+/* 고르는 화면: 같은 색 칸으로 화면을 채움 */
+.list.fillv{display:flex;flex-direction:column;gap:10px;min-height:calc(100dvh - 96px - 88px - 150px)}
+.list.fillv .row{flex:1}
+.row.fill{color:#fff;border:0;box-shadow:inset 0 -6px 0 #0003;font-size:1.35em}
+.row.fill .go{color:#fff;opacity:.9}
+.row.f-hurt{background:var(--hurt)}.row.f-sick{background:var(--sick)}
+.tiles.two{height:auto;grid-template-rows:130px;margin-top:10px}
+.tiles.two .tile{min-height:130px;font-size:30px}
+.err{margin:10px 0 0;color:var(--red);font-size:24px;font-weight:900}
+.err:empty{display:none}
+@media (max-width:350px){.tile{font-size:28px}.call{font-size:19px}.call small{font-size:17px}.sosbar{font-size:30px}}
+
+/* ===== 한 화면에 담기 + 버튼 안을 글자로 채우기 ===== */
+:root{--toph:74px;--flowh:84px;--barh:84px}
+.top{height:var(--toph);padding-top:8px;padding-bottom:8px}
+.topinfo{min-height:56px}
+.sosbar{min-height:var(--barh);font-size:36px}
+.wrap{padding-top:12px}
+body[data-page="help"] .wrap{padding-bottom:calc(var(--barh) + 8px)}
+.home{display:flex;flex-direction:column;gap:10px;height:calc(100dvh - var(--toph) - var(--barh) - 20px)}
+.home h1{font-size:28px;margin:0}
+.tiles{flex:1;min-height:0;height:auto}
+.tile{container-type:size;padding:6px;min-height:0;font-size:inherit}
+.tile span{display:block;font-size:min(21cqw, 30cqh, 56px);line-height:1.15;letter-spacing:-.03em}
+.calls{margin:0}
+.call{min-height:0;height:88px;font-size:24px;line-height:1.2}
+.call small{font-size:21px}
+.home .nextmed{flex-direction:row;align-items:center;margin:0;padding:10px 12px;gap:10px;border-width:3px}
+.home .nextmed .t{font-size:24px;line-height:1.25}
+.home .nextmed .t small{font-size:20px}
+.home .nextmed button{width:auto;min-height:68px;padding:0 18px;font-size:26px}
+
+.flow-top{height:var(--flowh);padding-top:8px;padding-bottom:8px}
+.back.wide{min-height:66px}
+#flowBody{padding:12px 16px calc(var(--barh) + 12px)}
+.fit{display:flex;flex-direction:column;gap:10px;min-height:calc(100dvh - var(--flowh) - var(--barh) - 24px)}
+.fit h1{margin:0;font-size:32px;line-height:1.2}
+.fit .grow{flex:1;min-height:0}
+.fit .grow.center{display:flex;flex-direction:column;justify-content:center}
+.fit .btn{margin:0}
+.fit .btn + .btn{margin-top:0}
+.fit .box{margin:0}
+.q{margin:0 0 8px;font-size:28px;font-weight:900}
+.hint{margin:0;font-size:26px;font-weight:900;color:var(--green)}
+.down{margin:0;font-size:26px;font-weight:900;color:var(--red)}
+.h119{color:var(--red)}
+.box.tight{padding:12px 16px}
+.box.tight li,.steps.tight li{margin:4px 0;font-size:26px;line-height:1.35}
+.steps.tight{margin:0;padding-left:1.2em}
+.speak.sm{min-height:58px;margin:0;font-size:24px}
+.yn{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.yn .btn{min-height:120px;font-size:40px;letter-spacing:-1px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pair .btn{min-height:96px;font-size:26px;line-height:1.25}
+.stack3{display:flex;flex-direction:column;gap:10px}
+.stack3 .btn{flex:1;min-height:90px;font-size:38px}
+.fit .step{margin:0;font-size:38px;line-height:1.35}
+.fit .count{font-size:28px}
+.fit textarea{min-height:150px;font-size:28px;font-weight:700}
+.fit .tile.grow{min-height:220px}
+.fit > .tile span{font-size:min(16cqw, 22cqh, 64px)}
+.summary dd{font-size:28px}
+/* 고르는 목록: 글자로 칸을 채움 */
+.list.fillv{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.list.fillv .row{flex:1;min-height:70px;padding:6px 18px;container-type:inline-size}
+.row.fill .go{display:none}
+.row.fill .label{font-size:min(10cqw, 46px);line-height:1.15;letter-spacing:-.03em}
+.tiles.two{height:auto;grid-template-rows:118px;margin:0}
+.tiles.two .tile span{font-size:min(17cqw, 30cqh, 40px)}
+@media (max-height:640px){.call{height:76px}.yn .btn{min-height:100px;font-size:34px}.fit .step{font-size:32px}}
+
+/* 2차 조정: 작은 화면에서도 스크롤 줄이기 */
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.qrow .q{margin:0;flex:1}
+.speak.mini{flex:none;width:auto;min-height:56px;margin:0;padding:0 16px;font-size:22px;border-width:3px}
+.fit .btn-big{min-height:96px}
+.yn .btn{min-height:104px}
+.pair .btn{min-height:84px}
+.waitbtn{min-height:120px;font-size:34px;line-height:1.25}
+.tiles.two{grid-template-rows:100px}
+.fit h1{font-size:30px}
+.box.tight li,.steps.tight li{font-size:25px;margin:2px 0}
+.summary dt{margin-top:4px;font-size:19px}
+.summary dd{font-size:26px}
+.quote{padding:12px 16px}
+@media (max-width:360px){
+  .fit h1{font-size:27px}.q{font-size:24px}.hint,.down{font-size:23px}
+  .box.tight li,.steps.tight li{font-size:22px}
+  .yn .btn{font-size:34px;min-height:92px}
+  .fit .step{font-size:30px}
+  .call{font-size:20px}.call small{font-size:18px}
+  .pair .btn{font-size:22px}
+  .waitbtn{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">곁에<small>시범</small></div>
+  <button class="topinfo" onclick="go('me')">내 정보</button>
+</header>
+
+<main class="wrap">
+
+  <!-- 첫 화면: 화면을 꽉 채우는 큰 칸 -->
+  <section class="page home" id="help">
+    <h1 tabindex="-1">무슨 일이 있으세요?</h1>
+    <div class="tiles">
+      <button class="tile t-hurt" onclick="openMenu('hurt')"><span>다쳤어요<br>물렸어요</span></button>
+      <button class="tile t-sick" onclick="openMenu('sick')"><span>몸이<br>아파요</span></button>
+      <button class="tile t-voice" onclick="startVoice()"><span>말로<br>설명하기</span></button>
+      <button class="tile t-write" onclick="openWrite()"><span>글로<br>설명하기</span></button>
+    </div>
+    <div class="calls" id="quickCalls" aria-label="바로 전화"></div>
+    <div id="nextMed"></div>
+  </section>
+
+  <!-- 내 정보 · 약 · 연락처 -->
+  <section class="page" id="me" hidden>
+    <button class="back wide" style="margin-bottom:18px" onclick="go('help')">← 처음 화면으로</button>
+    <h1 tabindex="-1">내 정보 · 약 · 연락처</h1>
+
+    <h2>전화할 곳</h2>
+    <div id="contactList"></div>
+    <p class="note" style="margin-top:4px">번호는 이 휴대폰에만 저장돼요.</p>
+    <button class="btn btn-white btn-big" onclick="openMap()">가까운 의료기관 지도</button>
+
+    <h2>오늘 드실 약</h2>
+    <div class="box box-amber" role="note">
+      <b>배가 끊길 수 있어요</b><br>
+      다음 주 화요일 풍랑 예보가 있어요. 혈압약이 <b>5일치</b> 남았어요. 보건진료소에 미리 말씀하세요. <span class="tag">예시</span>
+    </div>
+    <div id="medList"></div>
+    <button class="btn btn-white btn-big" onclick="openAddMed()">＋ 약 추가하기</button>
+
+    <h2>앓고 있는 병</h2>
+    <div class="chips" data-group="conds">
+      <button class="chip" aria-pressed="false">고혈압</button>
+      <button class="chip" aria-pressed="false">당뇨</button>
+      <button class="chip" aria-pressed="false">심장병</button>
+      <button class="chip" aria-pressed="false">뇌졸중</button>
+      <button class="chip" aria-pressed="false">관절·허리</button>
+      <button class="chip" aria-pressed="false">치매</button>
+    </div>
+
+    <h2>먹는 약</h2>
+    <div class="chips" data-group="drugs">
+      <button class="chip" aria-pressed="false">혈압약</button>
+      <button class="chip" aria-pressed="false">당뇨약</button>
+      <button class="chip" aria-pressed="false">피 묽게 하는 약</button>
+      <button class="chip" aria-pressed="false">진통제</button>
+    </div>
+
+    <h2>알레르기</h2>
+    <div class="chips" data-group="allergy">
+      <button class="chip" aria-pressed="false">벌</button>
+      <button class="chip" aria-pressed="false">약</button>
+      <button class="chip" aria-pressed="false">음식</button>
+    </div>
+
+    <h2>글자 크기</h2>
+    <button class="btn btn-white btn-big" id="sizeBtn" aria-pressed="false" onclick="toggleSize()">글자 더 크게</button>
+
+    <p class="note">고른 병·약·알레르기는 응급 안내에 쓰여요. 이 화면에서만 쓰고 저장하지 않아요.</p>
+  </section>
+</main>
+
+<!-- 단계별 안내 화면 -->
+<div id="flow" hidden role="dialog" aria-modal="true" aria-labelledby="flowTitle">
+  <div class="flow-top">
+    <button class="back wide" onclick="back()">← 뒤로 가기</button>
+  </div>
+  <div class="wrap" id="flowBody"></div>
+</div>
+
+<!-- 어느 화면에서나 맨 아래: 119 -->
+<a class="sosbar" href="tel:119" aria-label="119에 전화하기">119 전화하기</a>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- 내 정보 상태 (메모리에만) ---------- */
+const me = { conds:new Set(), drugs:new Set(), allergy:new Set() };
+document.querySelectorAll('.chips').forEach(group => {
+  group.addEventListener('click', e => {
+    const chip = e.target.closest('.chip'); if (!chip) return;
+    const on = chip.getAttribute('aria-pressed') !== 'true';
+    chip.setAttribute('aria-pressed', String(on));
+    const set = me[group.dataset.group];
+    on ? set.add(chip.textContent.trim()) : set.delete(chip.textContent.trim());
+  });
+});
+function toggleSize(){
+  const on = document.body.classList.toggle('xl');
+  $('sizeBtn').setAttribute('aria-pressed', String(on));
+  $('sizeBtn').textContent = on ? '글자 원래대로' : '글자 더 크게';
+}
+
+/* ---------- 공통 ---------- */
+let toastTimer;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.hidden=true, 3500); }
+function go(page){
+  document.body.dataset.page = page;
+  document.querySelectorAll('.page').forEach(p => p.hidden = p.id !== page);
+  window.scrollTo(0,0);
+  const h = document.querySelector('#'+page+' h1'); if (h) h.focus();
+}
+function demoCall(who){ toast(who + ' 번호는 시범이라 연결되지 않아요'); }
+
+/* ---------- 연락처: 보건진료소 · 이장님 · 가족 번호 지정 ---------- */
+const CONTACT_KEY = 'gyeote_contacts_v1';
+const contacts = {
+  clinic: { label:'보건진료소', name:'섬마을 보건진료소', tel:'' },
+  chief:  { label:'이장님',     name:'○○리 이장',        tel:'' },
+  family: { label:'가족',       name:'큰딸',              tel:'' }
+};
+try {
+  const saved = JSON.parse(localStorage.getItem(CONTACT_KEY) || '{}');
+  for (const k in contacts) if (saved[k]) Object.assign(contacts[k], { name: saved[k].name || contacts[k].name, tel: saved[k].tel || '' });
+} catch(e) {}
+function saveContacts(){
+  try { localStorage.setItem(CONTACT_KEY, JSON.stringify(contacts)); } catch(e) { toast('이 기기에서는 저장이 안 돼서 이번에만 쓸게요'); }
+}
+const digits = t => String(t || '').replace(/\D/g, '');
+function prettyTel(t){
+  const d = digits(t);
+  if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  if (d.length === 10) return d.startsWith('02') ? d.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3') : d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+  if (d.length === 9 && d.startsWith('02')) return d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+  if (d.length === 8) return d.replace(/(\d{4})(\d{4})/, '$1-$2');
+  return d;
+}
+function renderContacts(){
+  $('quickCalls').innerHTML = Object.entries(contacts).map(([k, c]) =>
+    `<button class="call${c.tel ? '' : ' empty'}" onclick="callContact('${k}')">${esc(c.label)}<small>${c.tel ? '전화하기' : '번호 넣기'}</small></button>`).join('');
+  $('contactList').innerHTML = Object.entries(contacts).map(([k, c]) => `
+    <div class="person">
+      <b>${esc(c.label)}</b>
+      <div class="who">${esc(c.name)}</div>
+      ${c.tel ? `<div class="num">${esc(prettyTel(c.tel))}</div>` : `<div class="num empty">번호가 아직 없어요</div>`}
+      <div class="two">
+        <button class="btn btn-green" onclick="callContact('${k}')">전화</button>
+        <button class="btn btn-white" onclick="editContact('${k}')">${c.tel ? '번호 바꾸기' : '번호 넣기'}</button>
+      </div>
+    </div>`).join('');
+}
+function callContact(k){
+  const c = contacts[k];
+  if (!c.tel) { toast('먼저 ' + c.label + ' 번호를 넣어 주세요'); editContact(k, !$('flow').hidden); return; }
+  location.href = 'tel:' + digits(c.tel);
+}
+let editFromFlow = false;
+function editContact(k, fromFlow){
+  editFromFlow = !!fromFlow;
+  if (!fromFlow) stack.length = 0;
+  push(() => {
+    const c = contacts[k];
+    show(`
+      <h1>${esc(c.label)} 번호</h1>
+      <label class="field" for="cName">이름</label>
+      <input id="cName" type="text" maxlength="20" value="${esc(c.name)}" autocomplete="off">
+      <label class="field" for="cTel">전화번호</label>
+      <input id="cTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="010-1234-5678" value="${esc(prettyTel(c.tel))}" aria-describedby="cTelErr">
+      <p class="err" id="cTelErr" role="alert"></p>
+      <button class="btn btn-green btn-big" style="margin-top:24px" onclick="saveContact('${k}')">저장하기</button>
+      ${c.tel ? `<button class="btn btn-white" onclick="clearContact('${k}')">번호 지우기</button>` : ''}
+      <p class="note">번호는 이 휴대폰에만 저장돼요. 응급 화면의 "알리기"와 "전화" 버튼이 이 번호로 연결돼요.</p>
+    `);
+  });
+}
+function saveContact(k){
+  const tel = digits($('cTel').value), name = $('cName').value.trim();
+  if (tel.length < 8 || tel.length > 12) { $('cTelErr').textContent = '번호가 맞지 않아요. 예: 010-1234-5678'; $('cTel').focus(); return; }
+  contacts[k].tel = tel; if (name) contacts[k].name = name;
+  saveContacts(); renderContacts(); afterEdit(); toast(contacts[k].label + ' 번호를 저장했어요');
+}
+function clearContact(k){
+  contacts[k].tel = ''; saveContacts(); renderContacts(); afterEdit(); toast('번호를 지웠어요');
+}
+/* 응급 화면에서 번호를 넣었으면 그 화면으로 돌아가고, 아니면 내 정보로 */
+function afterEdit(){
+  if (editFromFlow && stack.length > 1) { back(); }
+  else { closeFlow(); go('me'); }
+}
+
+/* 읽어주기 */
+function speak(text){
+  if (!('speechSynthesis' in window)) { toast('이 기기에서는 읽어주기를 쓸 수 없어요'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+function stopSpeak(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+let lastSpeech = '';
+function qrow(q, text){ lastSpeech = text; return `<div class="qrow"><p class="q">${esc(q)}</p><button class="speak mini" onclick="speak(lastSpeech)">듣기</button></div>`; }
+function speakBtn(text){ lastSpeech = text; return `<button class="speak sm" onclick="speak(lastSpeech)">소리로 듣기</button>`; }
+
+/* 흐름 화면: 쌓아 두었다가 뒤로 */
+const stack = [];
+function show(html){
+  stopSpeak();
+  $('flowBody').innerHTML = html;
+  $('flow').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('flow').scrollTop = 0;
+  const h = $('flowBody').querySelector('h1'); if (h){ h.id='flowTitle'; h.setAttribute('tabindex','-1'); h.focus(); }
+}
+function push(fn){ stack.push(fn); fn(); }
+function back(){ stack.pop(); if (stack.length) stack[stack.length-1](); else closeFlow(); }
+function closeFlow(){ stopSpeak(); stack.length=0; $('flow').hidden=true; document.body.style.overflow=''; }
+function home(){ closeFlow(); go('help'); }
+
+/* ---------- 사고별 안내 (소방청·지자체 소방 안내 기준) ---------- */
+const G = {
+  snake: {
+    title:'뱀에 물렸어요', always119:true,
+    wait:[
+      '뱀이 있던 곳에서 바로 떨어지세요.',
+      '반지, 팔찌, 시계를 빼세요. 곧 부을 수 있어요.',
+      '깨끗한 물이 있으면 물린 곳을 씻으세요.',
+      '물린 곳보다 2~3cm 위에 접은 수건을 대고 손수건으로 감으세요. 손가락 하나가 들어갈 만큼 느슨하게요.',
+      '움직이지 말고 가만히 쉬세요. 움직이면 독이 빨리 퍼져요.'
+    ],
+    dont:['꽉 묶지 마세요','입으로 빨지 마세요','약이나 돼지비계를 바르지 마세요','뱀을 잡으려 하지 마세요']
+  },
+  bee: {
+    title:'벌에 쏘였어요',
+    danger:['숨쉬기가 힘들어요','얼굴, 입술, 목이 부어요','어지럽거나 쓰러질 것 같아요','온몸이 가렵고 두드러기가 나요','여러 군데를 쏘였어요'],
+    wait:['편하게 누우세요. 숨이 차면 앉으세요.','꽉 끼는 옷을 풀어 주세요.','처방받은 응급 주사(에피펜)가 있으면 바로 쓰세요.'],
+    steps:[
+      '벌이 있는 곳에서 멀리 떨어지세요.',
+      '침이 보이면 카드처럼 납작한 것으로 살살 밀어서 빼세요.',
+      '물로 씻고, 차가운 수건이나 얼음으로 식혀 주세요.',
+      '한동안 몸 상태를 지켜보세요. 숨이 차거나 얼굴이 부으면 바로 119에 전화하세요.'
+    ],
+    dont:['손가락이나 족집게로 침을 짜내지 마세요','벌집을 직접 건드리지 마세요. 119에 신고하세요']
+  },
+  cut: {
+    title:'베이거나 찔렸어요',
+    danger:['피가 뿜어져 나와요','10분 넘게 눌러도 피가 안 멈춰요','상처가 깊거나 벌어졌어요','손가락 같은 곳이 잘렸어요'],
+    wait:['깨끗한 천으로 상처를 계속 세게 누르세요.','잘린 부분은 깨끗한 천에 싸서 비닐에 넣으세요. 그 비닐을 얼음물에 담가 함께 가져가세요. 얼음에 직접 닿으면 안 돼요.'],
+    steps:[
+      '깨끗한 천이나 수건으로 상처를 꾹 누르세요.',
+      '10분 동안 떼지 말고 계속 누르세요. 다친 곳을 가슴보다 높이 드세요.',
+      '피가 멈추면 깨끗한 물로 씻고 깨끗한 천으로 덮으세요.',
+      '녹슨 연장이나 흙에 다쳤다면 보건진료소에 알리세요. 파상풍 주사가 필요할 수 있어요.'
+    ],
+    dont:['흙, 된장, 담뱃가루를 바르지 마세요','피가 나는 동안 자꾸 들춰 보지 마세요']
+  },
+  fall: {
+    title:'넘어졌어요',
+    danger:['머리를 부딪혔어요','일어설 수가 없어요','다리가 이상하게 돌아갔거나 짧아 보여요','숨쉬기 힘들거나 가슴이 아파요','정신이 흐려요'],
+    wait:['움직이지 말고 그 자리에 계세요.','춥지 않게 덮어 주세요.','옆에 사람이 있으면 아픈 곳을 판자나 우산으로 받쳐 고정해 주세요.'],
+    steps:[
+      '바로 일어나지 말고 잠시 그대로 숨을 고르세요.',
+      '아픈 곳이 있는지 천천히 살펴보세요.',
+      '괜찮으면 무릎을 꿇고 의자나 단단한 가구를 잡고 천천히 일어나세요.',
+      '엉덩이나 허리가 계속 아프면 보건진료소에 꼭 알리세요. 뼈가 부러졌을 수 있어요.'
+    ],
+    dont:['아픈 곳을 억지로 움직이거나 펴지 마세요','괜찮겠지 하고 미루지 마세요']
+  },
+  heat: {
+    title:'더위를 먹었어요',
+    danger:['정신이 흐리거나 헛소리를 해요','몸이 아주 뜨거운데 땀이 안 나요','쓰러졌거나 몸이 떨리며 굳어요'],
+    dangerTitle:'열사병일 수 있어요',
+    wait:['그늘이나 시원한 곳으로 옮기세요.','옷을 느슨하게 풀어 주세요.','젖은 수건, 찬물, 부채로 몸을 계속 식혀 주세요.','정신이 흐리면 억지로 물을 먹이지 마세요.'],
+    steps:[
+      '그늘이나 시원한 곳으로 가서 쉬세요.',
+      '옷을 느슨하게 하고 젖은 수건으로 몸을 식히세요.',
+      '물이나 이온음료를 천천히 드세요.',
+      '1시간이 지나도 나아지지 않으면 보건진료소에 알리세요. 더 나빠지면 119에 전화하세요.'
+    ],
+    dont:['한낮(12시~5시)에 다시 밭일을 나가지 마세요','술은 드시지 마세요']
+  }
+};
+
+/* 두 번째 화면: 고를 것 */
+function rowBtn(cls, label, act){ return `<button class="row fill ${cls}" onclick="${act}"><span class="label">${label}</span><span class="go" aria-hidden="true">›</span></button>`; }
+function openMenu(kind){
+  stack.length = 0;
+  if (kind === 'hurt') push(() => show(`
+    <div class="fit"><h1>어떻게 다치셨어요?</h1>
+    <div class="list fillv">
+      ${rowBtn('f-hurt','뱀에 물렸어요',"openGuide('snake',true)")}
+      ${rowBtn('f-hurt','벌에 쏘였어요',"openGuide('bee',true)")}
+      ${rowBtn('f-hurt','베이거나 찔렸어요',"openGuide('cut',true)")}
+      ${rowBtn('f-hurt','넘어졌어요',"openGuide('fall',true)")}
+      ${rowBtn('f-hurt','더위를 먹었어요',"openGuide('heat',true)")}
+    </div></div>`));
+  else push(() => show(`
+    <div class="fit"><h1>어디가 아프세요?</h1>
+    <div class="list fillv">
+      ${rowBtn('f-sick','열이 나요',"startSymptom('열이 나요',true)")}
+      ${rowBtn('f-sick','배가 아파요',"startSymptom('배가 아파요',true)")}
+      ${rowBtn('f-sick','기침이 나요',"startSymptom('기침이 나요',true)")}
+      ${rowBtn('f-sick','어지러워요',"startSymptom('어지러워요',true)")}
+    </div>
+    <div class="tiles two">
+      <button class="tile t-voice" onclick="startVoice(true)"><span>다른 곳은<br>말로</span></button>
+      <button class="tile t-write" onclick="openWrite('',true)"><span>다른 곳은<br>글로</span></button>
+    </div></div>`));
+}
+
+function openGuide(key, keep){
+  if (!keep) stack.length = 0;
+  const g = G[key];
+  push(g.always119 ? () => screen119(g, true) : () => screenCheck(g));
+}
+
+/* 1단계: 위험 신호 확인 */
+function ynButtons(yes, no){ return `<div class="yn"><button class="btn btn-red" onclick="${yes}">있어요</button><button class="btn btn-green" onclick="${no}">없어요</button></div>`; }
+function alertRow(title){
+  const t = esc(title);
+  return `<div class="calls">
+    <button class="call" onclick="notify('chief', '${t} 도움이 필요해요. 와 주세요.')">이장님<small>알리기</small></button>
+    <button class="call" onclick="notify('family', '${t} 119에 연락하고 있어요.')">가족<small>알리기</small></button>
+    <button class="call" onclick="notify('clinic', '${t} 119에 연락하고 있어요.')">보건진료소<small>알리기</small></button>
+  </div>`;
+}
+function screenCheck(g){
+  let extra = '';
+  if (g === G.bee && me.allergy.has('벌'))
+    extra = `<div class="box box-red tight"><b>벌 알레르기가 있어요. 바로 119에 전화하세요.</b></div>`;
+  const q = g.dangerTitle || '이런 증상이 있나요?';
+  show(`<div class="fit">
+    <h1>${esc(g.title)}</h1>
+    ${extra}
+    ${qrow(q, q + '. ' + g.danger.join('. '))}
+    <div class="grow"><div class="box box-red tight"><ul>${g.danger.map(d => `<li>${esc(d)}</li>`).join('')}</ul></div></div>
+    ${ynButtons(`push(()=>screen119(G.${keyOf(g)}))`, `push(()=>screenStep(G.${keyOf(g)},0))`)}
+  </div>`);
+}
+function keyOf(g){ return Object.keys(G).find(k => G[k] === g); }
+
+/* 119 화면: 전화는 맨 아래 빨간 막대 */
+function screen119(g, first){
+  let headNote = '';
+  if (g === G.fall && me.drugs.has('피 묽게 하는 약'))
+    headNote = `<div class="box box-amber tight"><b>피 묽게 하는 약을 드신다고 구급대원에게 말씀하세요.</b></div>`;
+  show(`<div class="fit">
+    <h1 class="h119">${first ? esc(g.title) + '<br>' : ''}지금 119에 전화하세요</h1>
+    <p class="down">맨 아래 빨간 버튼을 누르세요</p>
+    ${headNote}
+    <button class="btn btn-green grow waitbtn" onclick="waitBase=stack.length;push(()=>screenWait(G.${keyOf(g)},0))">구급차 기다리며<br>할 일 ${g.wait.length}가지</button>
+    ${alertRow(g.title + '.')}
+    <button class="btn btn-white" onclick="push(()=>screenDont(G.${keyOf(g)}))">하면 안 되는 일</button>
+  </div>`);
+}
+/* 구급차 기다리며 할 일: 한 장씩 */
+let waitBase = 0;
+function screenWait(g, i){
+  const n = g.wait.length, last = i === n-1;
+  show(`<div class="fit">
+    <h1>구급차 기다리며</h1>
+    <div class="grow center">
+      <div class="count">${i+1} / ${n}</div>
+      <p class="step">${esc(g.wait[i])}</p>
+    </div>
+    ${speakBtn(g.wait[i])}
+    <button class="btn btn-green btn-big" onclick="${last ? 'stack.length=waitBase;stack[stack.length-1]()' : `push(()=>screenWait(G.${keyOf(g)}, ${i+1}))`}">${last ? '다 했어요' : '다음'}</button>
+  </div>`);
+}
+
+/* 응급처치 단계: 한 화면에 하나씩 */
+function screenStep(g, i){
+  const n = g.steps.length, last = i === n-1;
+  let note = '';
+  if (g === G.fall && i === 0 && me.drugs.has('피 묽게 하는 약'))
+    note = `<div class="box box-amber tight">피 묽게 하는 약을 드세요. 머리를 부딪혔다면 보건진료소에 꼭 알리세요.</div>`;
+  show(`<div class="fit">
+    <h1>${esc(g.title)}</h1>
+    ${note}
+    <div class="grow center">
+      <div class="count">${i+1} / ${n}</div>
+      <p class="step">${esc(g.steps[i])}</p>
+    </div>
+    ${speakBtn(g.steps[i])}
+    <button class="btn btn-green btn-big" onclick="push(()=>${last ? `screenDont(G.${keyOf(g)}, true)` : `screenStep(G.${keyOf(g)}, ${i+1})`})">${last ? '다 했어요' : '다음'}</button>
+  </div>`);
+}
+
+/* 하면 안 되는 일 */
+function screenDont(g, thenDone){
+  show(`<div class="fit">
+    <h1>이렇게 하면 안 돼요</h1>
+    <div class="grow center"><ul class="steps dont">${g.dont.map(d => `<li>${esc(d)}</li>`).join('')}</ul></div>
+    ${speakBtn('이렇게 하면 안 돼요. ' + g.dont.join('. '))}
+    ${thenDone ? `<button class="btn btn-green btn-big" onclick="push(()=>screenDone(G.${keyOf(g)}))">알겠어요</button>` : `<button class="btn btn-white btn-big" onclick="back()">← 돌아가기</button>`}
+  </div>`);
+}
+
+/* 마무리 */
+function screenDone(g){
+  const t = esc(g.title);
+  show(`<div class="fit">
+    <h1>잘하셨어요</h1>
+    <div class="grow center"><p class="step">보건진료소에 알려 두면 다시 살펴봐 드릴 수 있어요.</p></div>
+    <button class="btn btn-green btn-big" onclick="notify('clinic', '${t}. 응급처치를 했어요. 살펴봐 주세요.')">보건진료소에 알리기</button>
+    <div class="pair">
+      <button class="btn btn-white" onclick="notify('family', '${t}. 응급처치를 했어요.')">가족에게<br>알리기</button>
+      <button class="btn btn-white" onclick="home()">처음<br>화면으로</button>
+    </div>
+  </div>`);
+}
+/* 알리기: 지정한 번호로 문자 앱을 열어 내용을 채워 줌 (보내기는 직접 누름) */
+function notify(k, text){
+  const c = contacts[k];
+  if (!c.tel) { toast('먼저 ' + c.label + ' 번호를 넣어 주세요'); editContact(k, !$('flow').hidden); return false; }
+  const body = '[곁에] ' + (text || '도움이 필요해요.');
+  location.href = 'sms:' + digits(c.tel) + '?body=' + encodeURIComponent(body);
+  toast('문자 앱에서 보내기를 눌러 주세요');
+  return true;
+}
+
+/* ---------- 몸이 불편해요 ---------- */
+let sym = { text:'', since:'' };
+function startSymptom(text, keep){
+  if (!keep) stack.length = 0; sym = { text, since:'' };
+  push(screenSince);
+}
+function screenSince(){
+  const opt = (v) => `<button class="btn btn-white" onclick="sym.since='${v}';push(screenRedFlag)">${v}</button>`;
+  show(`<div class="fit">
+    <h1>${esc(sym.text)}</h1>
+    <p class="q">언제부터 그러셨어요?</p>
+    <div class="grow stack3">${opt('오늘부터')}${opt('며칠 전부터')}${opt('오래전부터')}</div>
+  </div>`);
+}
+const RED = ['숨쉬기가 힘들어요','가슴이 조이듯 아파요','한쪽 얼굴이나 팔다리에 힘이 빠져요','말이 어눌해졌어요','정신이 흐려요'];
+function screenRedFlag(){
+  show(`<div class="fit">
+    <h1>이런 증상도 있나요?</h1>
+    ${qrow('하나라도 있으면 있어요', '이런 증상도 있나요? ' + RED.join('. '))}
+    <div class="grow"><div class="box box-red tight"><ul>${RED.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div></div>
+    ${ynButtons('push(screenRed119)', 'push(screenSummary)')}
+  </div>`);
+}
+function screenRed119(){
+  show(`<div class="fit">
+    <h1 class="h119">지금 119에 전화하세요</h1>
+    <p class="down">맨 아래 빨간 버튼을 누르세요</p>
+    <div class="grow center"><div class="box box-amber">전화할 때 <b>사는 곳, 아픈 곳, 드시는 약</b>을 말씀하세요.</div></div>
+    ${alertRow('몸이 많이 안 좋아요.')}
+  </div>`);
+}
+function screenSummary(){
+  const extra = [];
+  if (me.conds.size) extra.push(`<dt>앓는 병</dt><dd>${esc([...me.conds].join(', '))}</dd>`);
+  if (me.drugs.size) extra.push(`<dt>먹는 약</dt><dd>${esc([...me.drugs].join(', '))}</dd>`);
+  show(`<div class="fit">
+    <h1>보건진료소에 이렇게 알릴게요</h1>
+    <div class="grow"><dl class="quote summary">
+      <dt>불편한 곳</dt><dd>${esc(sym.text)}</dd>
+      <dt>언제부터</dt><dd>${esc(sym.since)}</dd>
+      ${extra.join('')}
+    </dl></div>
+    <button class="btn btn-green btn-big" onclick="if(notify('clinic', summaryText()))push(screenSent)">보건진료소에 보내기</button>
+    <div class="pair">
+      <button class="btn btn-white" onclick="callContact('clinic')">전화하기</button>
+      <button class="btn btn-white" onclick="push(screenMap)">지도 보기</button>
+    </div>
+  </div>`);
+}
+function summaryText(){
+  const lines = ['불편한 곳: ' + sym.text, '언제부터: ' + sym.since];
+  if (me.conds.size) lines.push('앓는 병: ' + [...me.conds].join(', '));
+  if (me.drugs.size) lines.push('먹는 약: ' + [...me.drugs].join(', '));
+  return lines.join('\n');
+}
+function screenSent(){
+  show(`<div class="fit">
+    <h1>문자를 보내 주세요</h1>
+    <div class="grow center"><p class="step">문자 앱에서 <u>보내기</u>를 누르면 보건진료소에 전달돼요.</p></div>
+    <button class="btn btn-white btn-big" onclick="callContact('clinic')">보건진료소에 전화하기</button>
+    <button class="btn btn-green btn-big" onclick="home()">처음으로</button>
+  </div>`);
+}
+
+/* ---------- 글로 쓰기 / 말로 하기 ---------- */
+let writeDraft = '';
+function openWrite(prefill, keep){
+  if (!keep) stack.length = 0;
+  writeDraft = prefill || '';
+  push(() => show(`<div class="fit">
+    <h1>글로 설명하기</h1>
+    <p class="hint">어디가 · 언제부터 · 얼마나 아픈지</p>
+    <textarea id="symText" class="grow" maxlength="500" placeholder="예: 어제 저녁부터 오른쪽 무릎이 붓고 아파요" oninput="writeDraft=this.value" aria-describedby="symErr">${esc(writeDraft)}</textarea>
+    <p class="err" id="symErr" role="alert"></p>
+    <button class="btn btn-green btn-big" onclick="submitText()">다 적었어요</button>
+    <button class="btn btn-white" onclick="startVoice(true)">말로 바꾸기</button>
+  </div>`));
+}
+function submitText(){
+  const t = $('symText').value.trim();
+  if (!t){ $('symErr').textContent = '불편한 곳을 한 줄이라도 적어 주세요.'; $('symText').focus(); return; }
+  route(t);
+}
+/* 말한 내용에 사고 단어가 있으면 바로 해당 안내로 */
+function route(text){
+  const rules = [[/뱀/,'snake'],[/벌|땡벌|말벌/,'bee'],[/베|찔|칼|낫|피가/,'cut'],[/넘어|미끄러|낙상|자빠/,'fall'],[/더위|햇볕|열사|일사/,'heat']];
+  const hit = rules.find(([re]) => re.test(text));
+  if (hit) openGuide(hit[1]); else startSymptom(text);
+}
+let rec;
+function startVoice(keep){
+  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Speech){ toast('이 기기에서는 글로 적어 주세요'); openWrite(); return; }
+  if (!keep) stack.length = 0;
+  push(() => show(`<div class="fit">
+    <h1>말로 설명하기</h1>
+    <p class="hint">어디가 · 언제부터 · 얼마나 아픈지</p>
+    <button class="tile t-voice grow" onclick="listen()"><span>누르고<br>말하기</span></button>
+    <button class="btn btn-white" onclick="openWrite('',true)">글로 바꾸기</button>
+    <p class="note" style="margin:0">말한 내용은 휴대폰 음성 인식 서비스로 보내질 수 있어요.</p>
+  </div>`));
+}
+function listen(){
+  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  rec = new Speech(); rec.lang='ko-KR'; rec.interimResults=false; rec.continuous=false;
+  show(`
+    <h1>듣고 있어요</h1>
+    <p class="step">불편한 곳을 말씀하세요.</p>
+    <button class="btn btn-white btn-big" onclick="rec&&rec.abort();openWrite('',true)">그만하고 글로 설명하기</button>
+  `);
+  let got = false;
+  const redraw = () => { if (stack.length) stack[stack.length-1](); };
+  rec.onresult = e => { got = true; confirmHeard(e.results[0][0].transcript); };
+  rec.onerror = () => { if (!got){ toast('잘 듣지 못했어요. 다시 해 주세요'); redraw(); } };
+  rec.onend = () => { if (!got && !$('flow').hidden && $('flowBody').textContent.includes('듣고 있어요')) redraw(); };
+  try { rec.start(); } catch(e){ toast('글로 적어 주세요'); openWrite(); }
+}
+let heard = '';
+function confirmHeard(text){
+  heard = text;
+  push(() => show(`
+    <h1>이렇게 들었어요</h1>
+    <div class="quote">“${esc(heard)}”</div>
+    <button class="btn btn-green btn-big" onclick="route(heard)">네, 맞아요</button>
+    <button class="btn btn-white btn-big" onclick="listen()">다시 말하기</button>
+    <button class="btn btn-white btn-big" onclick="openWrite(heard,true)">글로 고치기</button>
+  `));
+}
+
+/* ---------- 카카오맵: 가까운 의료기관 ----------
+   1) developers.kakao.com 에서 앱 생성 → JavaScript 키 발급
+   2) [플랫폼 > Web]에 이 페이지를 열 주소 등록 (예: http://localhost:5500, 배포 주소)
+   3) [카카오맵] 사용 설정 ON
+   4) 아래 KAKAO_JS_KEY 에 키를 붙여 넣기
+   ※ 파일을 더블클릭해서(file://) 열면 지도가 뜨지 않아요. 등록한 주소에서 여세요. */
+const KAKAO_JS_KEY = '45b5109e52d0d4023743efbf5be3a761'; // 카카오 JavaScript 키 (등록한 도메인에서만 작동)
+
+/* 예시 데이터: 실제로는 주최 측 A-1(보건의료기관 위치)과 KOMSA 기항지 좌표로 바꿔 넣으세요.
+   아래 좌표는 자월도 부근의 예시 위치예요. */
+const PLACES = [
+  { kind:'보건진료소', emo:'', name:'섬마을 보건진료소', tel:'', lat:37.2585, lng:126.3105, note:'예시 위치' },
+  { kind:'보건지소',   emo:'', name:'면 보건지소',       tel:'', lat:37.2530, lng:126.3010, note:'예시 위치' },
+  { kind:'선착장',     emo:'',  name:'○○ 선착장',        tel:'', lat:37.2490, lng:126.3175, note:'예시 위치 · 육지 이송 출발점' },
+  { kind:'헬기장',     emo:'', name:'○○ 헬기 착륙장',    tel:'', lat:37.2620, lng:126.3200, note:'예시 위치' }
+];
+let myPos = null;
+
+function openMap(){ stack.length = 0; push(screenMap); }
+
+function distKm(a, b){
+  const R = 6371, rad = x => x * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function placeList(){
+  const list = PLACES.map(p => ({ ...p, d: myPos ? distKm(myPos, p) : null }));
+  if (myPos) list.sort((a,b) => a.d - b.d);
+  return list.map(p => {
+    const dist = p.d == null ? '' : ` · 약 ${p.d < 1 ? Math.round(p.d*1000)+'m' : p.d.toFixed(1)+'km'}`;
+    const to = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+    return `<div class="place">
+      <b>${esc(p.name)}</b>
+      <div class="meta">${esc(p.kind)}${dist} · ${esc(p.note)}</div>
+      <div class="two">
+        <button class="btn btn-green" onclick="${p.tel ? `location.href='tel:${esc(digits(p.tel))}'` : (p.kind === '보건진료소' ? `callContact('clinic')` : `demoCall('${esc(p.name)}')`)}">전화</button>
+        <a class="btn btn-white" href="${to}" target="_blank" rel="noopener">길찾기</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+function screenMap(){
+  show(`
+    <h1>가까운 의료기관</h1>
+    <div id="map" class="map" role="region" aria-label="의료기관 지도"></div>
+    <div id="mapMsg"></div>
+    <button class="btn btn-white btn-big" onclick="findMe()">내 위치에서 가까운 순서로</button>
+    <h2>목록</h2>
+    <div id="placeList">${placeList()}</div>
+    <p class="note">위치는 예시예요. 위급하면 지도보다 먼저 119에 전화하세요.</p>
+  `);
+  loadKakao(drawMap, why => {
+    $('map').style.display = 'none';
+    $('mapMsg').innerHTML = `<div class="box box-amber"><b>지도를 불러오지 못했어요.</b><br>${why}<br>아래 목록으로 전화와 길찾기는 할 수 있어요.</div>`;
+  });
+}
+function loadKakao(ok, fail){
+  if (window.kakao && kakao.maps && kakao.maps.load) { kakao.maps.load(ok); return; }
+  if (!KAKAO_JS_KEY) { fail('카카오 JavaScript 키가 아직 들어가 있지 않아요.'); return; }
+  if (location.protocol === 'file:') { fail('파일로 열면 지도가 뜨지 않아요. 등록한 주소에서 열어 주세요.'); return; }
+  const s = document.createElement('script');
+  s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_JS_KEY)}&autoload=false`;
+  s.onload = () => (window.kakao && kakao.maps) ? kakao.maps.load(ok) : fail('키나 등록한 주소를 확인해 주세요.');
+  s.onerror = () => fail('인터넷 연결이나 등록한 주소를 확인해 주세요.');
+  document.head.appendChild(s);
+}
+function drawMap(){
+  const el = $('map'); if (!el) return;
+  const first = PLACES[0];
+  const map = new kakao.maps.Map(el, { center: new kakao.maps.LatLng(first.lat, first.lng), level: 6 });
+  const bounds = new kakao.maps.LatLngBounds();
+  PLACES.forEach(p => {
+    const pos = new kakao.maps.LatLng(p.lat, p.lng);
+    new kakao.maps.Marker({ map, position: pos, title: p.name });
+    new kakao.maps.CustomOverlay({ map, position: pos, yAnchor: 2.4, content: `<div class="ov">${esc(p.name)}</div>` });
+    bounds.extend(pos);
+  });
+  if (myPos) {
+    const me = new kakao.maps.LatLng(myPos.lat, myPos.lng);
+    new kakao.maps.CustomOverlay({ map, position: me, content: `<div class="ov me">내 위치</div>` });
+    bounds.extend(me);
+  }
+  map.setBounds(bounds);
+}
+function findMe(){
+  if (!navigator.geolocation) { toast('이 기기에서는 위치를 찾을 수 없어요'); return; }
+  toast('내 위치를 찾고 있어요');
+  navigator.geolocation.getCurrentPosition(pos => {
+    myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    $('placeList').innerHTML = placeList();
+    if (window.kakao && kakao.maps && $('map') && $('map').style.display !== 'none') drawMap();
+    toast('가까운 순서로 바꿨어요');
+  }, () => toast('위치를 찾지 못했어요. 위치 권한을 확인해 주세요'), { enableHighAccuracy:true, timeout:10000 });
+}
+
+/* ---------- 약 먹기 ---------- */
+const meds = [
+  { when:'아침 8시', name:'혈압약 1알 · 식후', taken:null },
+  { when:'아침 8시', name:'당뇨약 1알 · 식후', taken:null },
+  { when:'저녁 6시', name:'당뇨약 1알 · 식후', taken:null }
+];
+function renderMeds(){
+  const i = meds.findIndex(m => !m.taken);
+  $('nextMed').innerHTML = i < 0
+    ? `<div class="nextmed"><div class="t">오늘 약을 다 드셨어요</div></div>`
+    : `<div class="nextmed"><div class="t"><small>다음 약 · ${esc(meds[i].when)}</small>${esc(meds[i].name.split(' · ')[0])}</div><button onclick="takeMed(${i})">먹었어요</button></div>`;
+  $('medList').innerHTML = meds.map((m,i) => `
+    <div class="med${m.taken?' done':''}">
+      <div class="when">${esc(m.when)}</div>
+      <div class="name">${esc(m.name)}</div>
+      ${m.taken
+        ? `<button class="btn" disabled>✓ ${esc(m.taken)}에 드셨어요</button>`
+        : `<button class="btn btn-green" onclick="takeMed(${i})">먹었어요</button>`}
+    </div>`).join('');
+}
+function takeMed(i){
+  const d = new Date();
+  meds[i].taken = `${d.getHours()}시 ${String(d.getMinutes()).padStart(2,'0')}분`;
+  renderMeds(); toast('드신 것으로 기록했어요');
+}
+let newSlot = '';
+function openAddMed(){
+  stack.length = 0; newSlot = '';
+  const slots = ['아침 8시','점심 12시','저녁 6시','자기 전 9시'];
+  push(() => show(`
+    <h1>약 추가하기</h1>
+    <label class="field" for="medName">약 이름</label>
+    <input id="medName" type="text" maxlength="40" placeholder="예: 혈압약" aria-describedby="medErr">
+    <p class="err" id="medErr" role="alert"></p>
+    <p class="field" style="font-weight:800;margin:22px 0 10px">언제 드세요?</p>
+    <div class="chips" id="slotChips">${slots.map(s=>`<button class="chip" aria-pressed="false" onclick="pickSlot(this,'${s}')">${s}</button>`).join('')}</div>
+    <button class="btn btn-green btn-big" style="margin-top:24px" onclick="saveMed()">추가하기</button>
+  `));
+}
+function pickSlot(el, s){
+  document.querySelectorAll('#slotChips .chip').forEach(c => c.setAttribute('aria-pressed','false'));
+  el.setAttribute('aria-pressed','true'); newSlot = s;
+}
+function saveMed(){
+  const name = $('medName').value.trim();
+  if (!name){ $('medErr').textContent = '약 이름을 적어 주세요.'; $('medName').focus(); return; }
+  if (!newSlot){ $('medErr').textContent = '언제 드시는지 아래에서 골라 주세요.'; return; }
+  meds.push({ when:newSlot, name, taken:null }); renderMeds(); closeFlow(); go('me'); toast('약을 추가했어요');
+}
+renderMeds();
+renderContacts();
+document.body.dataset.page = 'help';
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('flow').hidden) back(); });
+</script>
+</body>
+</html>
