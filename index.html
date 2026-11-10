@@ -41,8 +41,9 @@ p{margin:0 0 16px}
 .btn-white.btn-big{border-width:3px}
 
 /* 지도 */
-.map{width:100%;height:360px;border-radius:18px;border:2px solid var(--line);background:#e6ebe7;margin-bottom:16px;overflow:hidden}
+.map{width:100%;height:min(300px,36vh);border-radius:18px;border:2px solid var(--line);background:#e6ebe7;margin-bottom:16px;overflow:hidden}
 .ov{background:#fff;border:3px solid var(--green);border-radius:12px;padding:4px 10px;font-size:18px;font-weight:800;white-space:nowrap;color:var(--ink);box-shadow:0 2px 8px #0002}
+.seasrc{display:block;margin-top:8px;font-size:17px;color:var(--sub);font-weight:700}
 .ov.me{border-color:#1a5fb4;color:#1a5fb4}
 .place{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:12px}
 .place b{display:block;font-size:1.05em}
@@ -322,11 +323,9 @@ body[data-page="help"] .wrap{padding-bottom:calc(var(--barh) + 8px)}
     <p class="note" style="margin-top:4px">번호는 이 휴대폰에만 저장돼요.</p>
     <button class="btn btn-white btn-big" onclick="openMap()">가까운 의료기관 지도</button>
 
+    <h2>배 예보</h2>
+    <div id="seaBox" class="box box-green" role="note"><b>배 예보를 확인하고 있어요…</b></div>
     <h2>오늘 드실 약</h2>
-    <div class="box box-amber" role="note">
-      <b>배가 끊길 수 있어요</b><br>
-      다음 주 화요일 풍랑 예보가 있어요. 혈압약이 <b>5일치</b> 남았어요. 보건진료소에 미리 말씀하세요. <span class="tag">예시</span>
-    </div>
     <div id="medList"></div>
     <button class="btn btn-white btn-big" onclick="openAddMed()">＋ 약 추가하기</button>
 
@@ -849,15 +848,24 @@ function confirmHeard(text){
    ※ 파일을 더블클릭해서(file://) 열면 지도가 뜨지 않아요. 등록한 주소에서 여세요. */
 const KAKAO_JS_KEY = '45b5109e52d0d4023743efbf5be3a761'; // 카카오 JavaScript 키 (등록한 도메인에서만 작동)
 
-/* 예시 데이터: 실제로는 주최 측 A-1(보건의료기관 위치)과 KOMSA 기항지 좌표로 바꿔 넣으세요.
-   아래 좌표는 자월도 부근의 예시 위치예요. */
-const PLACES = [
-  { kind:'보건진료소', emo:'', name:'섬마을 보건진료소', tel:'', lat:37.2585, lng:126.3105, note:'예시 위치' },
-  { kind:'보건지소',   emo:'', name:'면 보건지소',       tel:'', lat:37.2530, lng:126.3010, note:'예시 위치' },
-  { kind:'선착장',     emo:'',  name:'○○ 선착장',        tel:'', lat:37.2490, lng:126.3175, note:'예시 위치 · 육지 이송 출발점' },
-  { kind:'헬기장',     emo:'', name:'○○ 헬기 착륙장',    tel:'', lat:37.2620, lng:126.3200, note:'예시 위치' }
+/* 실제 주변 시설 찾기: 카카오맵 장소 검색(카카오 로컬)을 사용해요.
+   카카오 개발자 콘솔에서 [제품 설정 > 카카오맵] 사용 설정이 ON이어야 작동해요.
+   위치 권한이 없으면 아래 기본 위치(자월도 부근)를 기준으로 찾아요. */
+const DEFAULT_POS = { lat:37.2585, lng:126.3105, label:'자월도 부근(기본 위치)' };
+const NOT_SHOP = ['FD6','CE7','AD5','CS2','MT1','CT1','AT4','PK6'];  // 음식점·카페·숙박·편의점·마트·주차장 등 제외
+const GROUPS = [
+  { key:'health', title:'보건진료소 · 보건소', kws:['보건진료소','보건지소','보건소'], max:3, label:true,
+    ok:p => /보건(진료소|지소|소|의료원)/.test(p.place_name) && !/정류장|버스|주차|약국/.test(p.place_name) },
+  { key:'er', title:'응급실', kws:['응급실','응급의료센터'], max:2,
+    ok:p => !NOT_SHOP.includes(p.category_group_code) && /응급(실|의료센터|의료기관)/.test(p.place_name) },
+  { key:'hosp', title:'병원 · 의원', cat:'HP8', max:2,
+    ok:p => p.category_group_code === 'HP8' && !/치과|한의|동물|요양/.test(p.place_name + p.category_name) },
+  { key:'pharm', title:'약국', cat:'PM9', max:2 },
+  { key:'port', title:'선착장 · 여객터미널', kws:['여객터미널','선착장'], max:2,
+    ok:p => !NOT_SHOP.includes(p.category_group_code) && /터미널|선착장|바다역|부두|나루|항$/.test(p.place_name) && !/주차/.test(p.place_name) }
 ];
-let myPos = null;
+const FAR_KM = 60;      // 너무 먼 곳은 목록에서 빼요
+let myPos = null, kmap = null, kmarks = [], found = [], searchSeq = 0;
 
 function openMap(){ stack.length = 0; push(screenMap); }
 
@@ -867,75 +875,219 @@ function distKm(a, b){
   const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
-function placeList(){
-  const list = PLACES.map(p => ({ ...p, d: myPos ? distKm(myPos, p) : null }));
-  if (myPos) list.sort((a,b) => a.d - b.d);
-  return list.map(p => {
-    const dist = p.d == null ? '' : ` · 약 ${p.d < 1 ? Math.round(p.d*1000)+'m' : p.d.toFixed(1)+'km'}`;
-    const to = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
-    return `<div class="place">
-      <b>${esc(p.name)}</b>
-      <div class="meta">${esc(p.kind)}${dist} · ${esc(p.note)}</div>
-      <div class="two">
-        <button class="btn btn-green" onclick="${p.tel ? `location.href='tel:${esc(digits(p.tel))}'` : (p.kind === '보건진료소' ? `callContact('clinic')` : `demoCall('${esc(p.name)}')`)}">전화</button>
-        <a class="btn btn-white" href="${to}" target="_blank" rel="noopener">길찾기</a>
-      </div>
-    </div>`;
-  }).join('');
+function fmtDist(d){ return d < 1 ? Math.round(d*1000) + 'm' : (d < 10 ? d.toFixed(1) : Math.round(d)) + 'km'; }
+function setMapMsg(html, tone){
+  const el = $('mapMsg'); if (!el) return;
+  el.className = 'box tight ' + (tone ? 'box-' + tone : 'box-green');
+  el.innerHTML = html;
 }
+
 function screenMap(){
   show(`
     <h1>가까운 의료기관</h1>
-    <div id="map" class="map" role="region" aria-label="의료기관 지도"></div>
-    <div id="mapMsg"></div>
-    <button class="btn btn-white btn-big" onclick="findMe()">내 위치에서 가까운 순서로</button>
-    <h2>목록</h2>
-    <div id="placeList">${placeList()}</div>
-    <p class="note">위치는 예시예요. 위급하면 지도보다 먼저 119에 전화하세요.</p>
+    <div id="mapMsg" class="box tight box-green">지도를 불러오고 있어요…</div>
+    <div id="map" class="map" role="region" aria-label="주변 의료기관 지도"></div>
+    <div class="pair">
+      <button class="btn btn-white" onclick="findMe()">내 위치에서 다시 찾기</button>
+      <button class="btn btn-white" onclick="searchHere()">지도 가운데에서 찾기</button>
+    </div>
+    <div id="placeList"></div>
+    <p class="note">카카오맵에 등록된 정보예요. 전화번호나 운영 여부가 바뀌었을 수 있어요. 위급하면 지도보다 먼저 119에 전화하세요.</p>
   `);
-  loadKakao(drawMap, why => {
+  loadKakao(() => {
+    if (!$('map')) return;
+    kmap = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(DEFAULT_POS.lat, DEFAULT_POS.lng), level: 7 });
+    kmarks = [];
+    findMe();
+  }, why => {
     $('map').style.display = 'none';
-    $('mapMsg').innerHTML = `<div class="box box-amber"><b>지도를 불러오지 못했어요.</b><br>${why}<br>아래 목록으로 전화와 길찾기는 할 수 있어요.</div>`;
+    setMapMsg(`<b>지도를 불러오지 못했어요.</b><br>${why}`, 'amber');
+    $('placeList').innerHTML = `<div class="box box-amber">가까운 보건진료소는 <b>내 정보 &gt; 전화할 곳</b>에 저장한 번호로 전화할 수 있어요.</div>`;
   });
 }
+
 function loadKakao(ok, fail){
-  if (window.kakao && kakao.maps && kakao.maps.load) { kakao.maps.load(ok); return; }
+  if (window.kakao && kakao.maps && kakao.maps.services) { kakao.maps.load(ok); return; }
+  if (window.kakao && kakao.maps && kakao.maps.load && !document.querySelector('script[data-kakao]')) { kakao.maps.load(ok); return; }
   if (!KAKAO_JS_KEY) { fail('카카오 JavaScript 키가 아직 들어가 있지 않아요.'); return; }
   if (location.protocol === 'file:') { fail('파일로 열면 지도가 뜨지 않아요. 등록한 주소에서 열어 주세요.'); return; }
   const s = document.createElement('script');
-  s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_JS_KEY)}&autoload=false`;
+  s.dataset.kakao = '1';
+  s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_JS_KEY)}&libraries=services&autoload=false`;
   s.onload = () => (window.kakao && kakao.maps) ? kakao.maps.load(ok) : fail('키나 등록한 주소를 확인해 주세요.');
-  s.onerror = () => fail('인터넷 연결이나 등록한 주소를 확인해 주세요.');
+  s.onerror = () => fail('인터넷 연결, 등록한 주소, 카카오맵 사용 설정(ON)을 확인해 주세요.');
   document.head.appendChild(s);
 }
-function drawMap(){
-  const el = $('map'); if (!el) return;
-  const first = PLACES[0];
-  const map = new kakao.maps.Map(el, { center: new kakao.maps.LatLng(first.lat, first.lng), level: 6 });
-  const bounds = new kakao.maps.LatLngBounds();
-  PLACES.forEach(p => {
-    const pos = new kakao.maps.LatLng(p.lat, p.lng);
-    new kakao.maps.Marker({ map, position: pos, title: p.name });
-    new kakao.maps.CustomOverlay({ map, position: pos, yAnchor: 2.4, content: `<div class="ov">${esc(p.name)}</div>` });
-    bounds.extend(pos);
-  });
-  if (myPos) {
-    const me = new kakao.maps.LatLng(myPos.lat, myPos.lng);
-    new kakao.maps.CustomOverlay({ map, position: me, content: `<div class="ov me">내 위치</div>` });
-    bounds.extend(me);
-  }
-  map.setBounds(bounds);
-}
+
 function findMe(){
-  if (!navigator.geolocation) { toast('이 기기에서는 위치를 찾을 수 없어요'); return; }
-  toast('내 위치를 찾고 있어요');
+  if (!kmap) return;
+  setMapMsg('내 위치를 찾고 있어요…');
+  if (!navigator.geolocation) { useDefault('이 기기에서는 위치를 찾을 수 없어요.'); return; }
   navigator.geolocation.getCurrentPosition(pos => {
     myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    $('placeList').innerHTML = placeList();
-    if (window.kakao && kakao.maps && $('map') && $('map').style.display !== 'none') drawMap();
-    toast('가까운 순서로 바꿨어요');
-  }, () => toast('위치를 찾지 못했어요. 위치 권한을 확인해 주세요'), { enableHighAccuracy:true, timeout:10000 });
+    searchAround(myPos, '내 위치');
+  }, () => useDefault('위치를 찾지 못했어요. 위치 권한을 켜면 내 주변으로 찾아 드려요.'),
+  { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
 }
+function useDefault(why){ searchAround(DEFAULT_POS, DEFAULT_POS.label, why); }
+function searchHere(){
+  if (!kmap) return;
+  const c = kmap.getCenter();
+  searchAround({ lat: c.getLat(), lng: c.getLng() }, '지도 가운데');
+}
+
+function kSearch(ps, type, q, loc, radius){
+  return new Promise(done => {
+    const S = kakao.maps.services;
+    const opt = { location: loc, sort: S.SortBy.DISTANCE, size: 15 };
+    if (radius) opt.radius = radius;
+    const cb = (data, status) => done(status === S.Status.OK ? data : []);
+    try { type === 'cat' ? ps.categorySearch(q, cb, opt) : ps.keywordSearch(q, cb, opt); }
+    catch (e) { done([]); }
+  });
+}
+function pickGroup(g, list, c){
+  const seen = new Set(), out = [];
+  list.forEach(p => {
+    if (seen.has(p.id) || (g.ok && !g.ok(p))) return;
+    seen.add(p.id);
+    const q = { id:p.id, gkey:g.key, kind:g.title, name:p.place_name, tel:p.phone || '',
+      addr:p.road_address_name || p.address_name || '', lat:+p.y, lng:+p.x };
+    q.d = distKm(c, q);
+    if (q.d <= FAR_KM) out.push(q);
+  });
+  return out.sort((a, b) => a.d - b.d).slice(0, g.max);
+}
+async function findGroup(ps, g, loc, c){
+  const run = async radius => {
+    const jobs = [];
+    if (g.cat) jobs.push(kSearch(ps, 'cat', g.cat, loc, 20000));
+    (g.kws || []).forEach(k => jobs.push(kSearch(ps, 'kw', k, loc, radius)));
+    return (await Promise.all(jobs)).flat();
+  };
+  let picked = pickGroup(g, await run(20000), c);          // 반경 20km 안에서 먼저
+  if (!picked.length && g.kws) picked = pickGroup(g, await run(0), c);   // 없으면 더 넓게
+  return picked;
+}
+async function searchAround(c, label, why){
+  const seq = ++searchSeq;
+  setMapMsg(`${why ? why + '<br>' : ''}<b>${esc(label)}</b> 주변을 찾고 있어요…`, why ? 'amber' : '');
+  $('placeList').innerHTML = '';
+  const ps = new kakao.maps.services.Places();
+  const loc = new kakao.maps.LatLng(c.lat, c.lng);
+  const res = await Promise.all(GROUPS.map(g => findGroup(ps, g, loc, c)));
+  if (seq !== searchSeq || !$('placeList')) return;      // 그 사이 다시 찾았거나 화면을 나갔으면 무시
+  found = res;
+  const total = res.reduce((n, g) => n + g.length, 0);
+  setMapMsg(`${why ? why + '<br>' : ''}<b>${esc(label)}</b> 기준 가까운 순서예요.`, why ? 'amber' : '');
+  $('placeList').innerHTML = total
+    ? GROUPS.map((g, i) => res[i].length ? `<h2>${g.title}</h2>` + res[i].map(placeCard).join('') : '').join('')
+    : `<div class="box box-amber"><b>주변에서 찾지 못했어요.</b><br>지도를 손가락으로 옮긴 뒤 "지도 가운데에서 찾기"를 눌러 보세요.</div>`;
+  drawMarkers(c, label);
+}
+function placeCard(p){
+  const to = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+  const call = p.tel ? `<a class="btn btn-green" href="tel:${esc(digits(p.tel))}">전화</a>` : '';
+  return `<div class="place">
+    <b>${esc(p.name)}</b>
+    <div class="meta">약 ${fmtDist(p.d)} · ${p.tel ? esc(p.tel) : '전화번호 정보 없음'}<br>${esc(p.addr)}</div>
+    <div class="two"${call ? '' : ' style="grid-template-columns:1fr"'}>
+      ${call}<a class="btn btn-white" href="${to}" target="_blank" rel="noopener">길찾기</a>
+    </div>
+  </div>`;
+}
+function drawMarkers(c, label){
+  if (!kmap || !$('map')) return;
+  kmarks.forEach(m => m.setMap(null)); kmarks = [];
+  const bounds = new kakao.maps.LatLngBounds();
+  const cpos = new kakao.maps.LatLng(c.lat, c.lng);
+  kmarks.push(new kakao.maps.CustomOverlay({ map: kmap, position: cpos, content: `<div class="ov me">${esc(label === '내 위치' ? '내 위치' : '찾은 곳')}</div>` }));
+  bounds.extend(cpos);
+  GROUPS.forEach((g, i) => (found[i] || []).forEach(p => {
+    const pos = new kakao.maps.LatLng(p.lat, p.lng);
+    kmarks.push(new kakao.maps.Marker({ map: kmap, position: pos, title: p.name }));
+    if (g.label) kmarks.push(new kakao.maps.CustomOverlay({ map: kmap, position: pos, yAnchor: 2.4, content: `<div class="ov">${esc(p.name)}</div>` }));
+    bounds.extend(pos);
+  }));
+  if (kmarks.length > 1) kmap.setBounds(bounds); else kmap.setCenter(cpos);
+}
+
+/* ---------- 배 끊김 예보 (기상청 중기해상예보, 공공데이터포털) ----------
+   서해중부 해상의 4~10일 뒤 예상 파고를 받아 와요.
+   판단 기준은 단순화한 것이에요: 최고 파고 3m 이상(풍랑주의보 수준) = 가능성 높음, 2.5m 이상 = 주의.
+   실제 운항 통제는 운항관리센터가 결정해요. */
+const KMA_KEY = '1ab929c591ae3be169284e11719cd27128afc548509d961acfbc736287c907a5';
+const SEA_REG = '12A20000';   // 서해중부
+const SEA_HIGH = 3.0, SEA_WARN = 2.5;
+function kstNow(){ return new Date(Date.now() + 9 * 3600000); }           // UTC 메서드로 읽으면 한국 시각
+function ymd(d){ return d.getUTCFullYear() + String(d.getUTCMonth()+1).padStart(2,'0') + String(d.getUTCDate()).padStart(2,'0'); }
+function seaIssues(){                      // 최근 발표 시각 2개 (06시, 18시 발표)
+  const n = kstNow(), h = n.getUTCHours(), day = x => new Date(n.getTime() - x * 86400000);
+  if (h >= 18) return [ymd(n) + '1800', ymd(n) + '0600'];
+  if (h >= 6)  return [ymd(n) + '0600', ymd(day(1)) + '1800'];
+  return [ymd(day(1)) + '1800', ymd(day(1)) + '0600'];
+}
+async function fetchSea(tmFc){
+  const u = `https://apis.data.go.kr/1360000/MidFcstInfoService/getMidSeaFcst?serviceKey=${KMA_KEY}&numOfRows=10&pageNo=1&dataType=JSON&regId=${SEA_REG}&tmFc=${tmFc}`;
+  const j = await (await fetch(u)).json();
+  const it = j && j.response && j.response.body && j.response.body.items && j.response.body.items.item;
+  if (!it || !it[0]) throw new Error('no data');
+  return it[0];
+}
+function seaDays(item, tmFc){
+  const base = Date.UTC(+tmFc.slice(0,4), +tmFc.slice(4,6) - 1, +tmFc.slice(6,8));
+  const days = [];
+  for (let n = 3; n <= 10; n++){
+    const vals = [item['wh'+n+'BAm'], item['wh'+n+'BPm'], item['wh'+n+'B']].map(Number).filter(v => v > 0);
+    if (!vals.length) continue;
+    days.push({ date: new Date(base + n * 86400000), max: Math.max(...vals), wf: item['wf'+n+'Pm'] || item['wf'+n] || '' });
+  }
+  return days;
+}
+function dayName(d){
+  const today = Date.UTC(kstNow().getUTCFullYear(), kstNow().getUTCMonth(), kstNow().getUTCDate());
+  const diff = Math.round((d.getTime() - today) / 86400000);
+  const w = '일월화수목금토'[d.getUTCDay()] + '요일';
+  return `${d.getUTCMonth()+1}월 ${d.getUTCDate()}일 ${w}` + (diff > 0 ? ` (${diff}일 뒤)` : '');
+}
+function renderSea(days, tmFc){
+  const el = $('seaBox'); if (!el) return;
+  const today = Date.UTC(kstNow().getUTCFullYear(), kstNow().getUTCMonth(), kstNow().getUTCDate());
+  days = days.filter(d => d.date.getTime() >= today);
+  const src = `<span class="seasrc">기상청 중기해상예보 · 서해중부 · ${+tmFc.slice(4,6)}월 ${+tmFc.slice(6,8)}일 ${+tmFc.slice(8,10)}시 발표</span>`;
+  const risky = days.filter(d => d.max >= SEA_WARN);
+  if (!days.length) { el.className = 'box box-amber'; el.innerHTML = `<b>배 예보를 불러오지 못했어요</b><br>${src}`; return; }
+  if (!risky.length) {
+    const a = days[0].date, b = days[days.length-1].date;
+    el.className = 'box box-green';
+    el.innerHTML = `<b>큰 파도 예보는 없어요</b><br>${a.getUTCMonth()+1}월 ${a.getUTCDate()}일부터 ${b.getUTCMonth()+1}월 ${b.getUTCDate()}일까지 예보예요. 바다 날씨는 바뀔 수 있어요.<br>${src}`;
+    return;
+  }
+  const high = risky.some(d => d.max >= SEA_HIGH);
+  el.className = 'box ' + (high ? 'box-red' : 'box-amber');
+  el.innerHTML = `<b>${high ? '배가 끊길 가능성이 높아요' : '배가 끊길 수 있어요'}</b>
+    <ul>${risky.slice(0,3).map(d => `<li>${dayName(d.date)} · 파도 최고 ${d.max.toFixed(1)}m</li>`).join('')}</ul>
+    약이 그때까지 남아 있는지 보시고, 모자라면 보건진료소에 미리 말씀하세요.<br>${src}`;
+}
+async function loadSea(){
+  const el = $('seaBox'); if (!el) return;
+  const issues = seaIssues();
+  try {                                         // 같은 발표분은 다시 받지 않아요
+    const c = JSON.parse(localStorage.getItem('gyeote_sea_v1') || 'null');
+    if (c && c.tmFc === issues[0]) { renderSea(seaDays(c.item, c.tmFc), c.tmFc); return; }
+  } catch (e) {}
+  for (const tmFc of issues){
+    try {
+      const item = await fetchSea(tmFc);
+      try { localStorage.setItem('gyeote_sea_v1', JSON.stringify({ tmFc, item })); } catch (e) {}
+      renderSea(seaDays(item, tmFc), tmFc);
+      return;
+    } catch (e) {}
+  }
+  el.className = 'box box-amber';
+  el.innerHTML = '<b>배 예보를 불러오지 못했어요</b><br>인터넷 연결을 확인해 주세요. 여객선 운항은 선사나 운항관리센터에 물어보세요.';
+}
+loadSea();
 
 /* ---------- 약 먹기 ---------- */
 const meds = [
