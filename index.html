@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f7f6f1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="곁에">
 <title>곁에 — 건강 도우미</title>
 <style>
 :root{
@@ -44,6 +50,14 @@ p{margin:0 0 16px}
 .map{width:100%;height:min(300px,36vh);border-radius:18px;border:2px solid var(--line);background:#e6ebe7;margin-bottom:16px;overflow:hidden}
 .ov{background:#fff;border:3px solid var(--green);border-radius:12px;padding:4px 10px;font-size:18px;font-weight:800;white-space:nowrap;color:var(--ink);box-shadow:0 2px 8px #0002}
 .seasrc{display:block;margin-top:8px;font-size:17px;color:var(--sub);font-weight:700}
+.topbtns{display:flex;gap:8px;flex:none}
+.top .topbtns .topinfo{padding:0 14px;font-size:23px;white-space:nowrap}
+.top .topbtns .topmap{background:var(--green);color:#fff;border-color:var(--green)}
+@media (max-width:400px){.top .brand small{display:none}}
+@media (max-width:350px){.top .topbtns .topinfo{padding:0 10px;font-size:21px}}
+.med .two{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.med .two .btn{margin:0}
+.installbtn{background:var(--green);color:#fff;border:0}
 .btn-amber{background:var(--amber-soft);border:3px solid #b45309;color:#7a3a00;font-weight:900}
 .place .savebtn{margin:10px 0 0;min-height:68px;width:100%}
 .place .saved{margin-top:10px;padding:12px;border-radius:12px;background:var(--green-soft);color:var(--green);font-weight:900;text-align:center}
@@ -298,7 +312,10 @@ body[data-page="help"] .wrap{padding-bottom:calc(var(--barh) + 8px)}
 
 <header class="top">
   <div class="brand">곁에<small>시범</small></div>
-  <button class="topinfo" onclick="go('me')">내 정보</button>
+  <div class="topbtns">
+    <button class="topinfo topmap" onclick="openMap()">병원 찾기</button>
+    <button class="topinfo" onclick="go('me')">내 정보</button>
+  </div>
 </header>
 
 <main class="wrap">
@@ -324,7 +341,9 @@ body[data-page="help"] .wrap{padding-bottom:calc(var(--barh) + 8px)}
     <h2>전화할 곳</h2>
     <div id="contactList"></div>
     <p class="note" style="margin-top:4px">번호는 이 휴대폰에만 저장돼요.</p>
-    <button class="btn btn-white btn-big" onclick="openMap()">가까운 의료기관 지도</button>
+
+    <h2>홈 화면에 추가</h2>
+    <div id="installBox"></div>
 
     <h2>배 예보</h2>
     <div id="seaBox" class="box box-green" role="note"><b>배 예보를 확인하고 있어요…</b></div>
@@ -1133,29 +1152,56 @@ async function loadSea(){
 loadSea();
 
 /* ---------- 약 먹기 ---------- */
-const meds = [
-  { when:'아침 8시', name:'혈압약 1알 · 식후', taken:null },
-  { when:'아침 8시', name:'당뇨약 1알 · 식후', taken:null },
-  { when:'저녁 6시', name:'당뇨약 1알 · 식후', taken:null }
-];
+/* 약은 사용자가 직접 넣어요. 이 휴대폰에만 저장되고, '먹었어요' 표시는 날짜가 바뀌면 지워져요. */
+const MED_KEY = 'gyeote_meds_v1';
+const SLOT_ORDER = ['아침 8시','점심 12시','저녁 6시','자기 전 9시'];
+const todayKey = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); };
+let meds = [];
+try { meds = JSON.parse(localStorage.getItem(MED_KEY) || '[]').filter(m => m && m.name && m.when); } catch(e) { meds = []; }
+meds.forEach(m => { if (m.day !== todayKey()) { m.taken = null; m.day = null; } });
+function saveMeds(){ try { localStorage.setItem(MED_KEY, JSON.stringify(meds)); } catch(e) {} }
+function sortMeds(){ meds.sort((a, b) => SLOT_ORDER.indexOf(a.when) - SLOT_ORDER.indexOf(b.when)); }
 function renderMeds(){
+  sortMeds();
   const i = meds.findIndex(m => !m.taken);
-  $('nextMed').innerHTML = i < 0
-    ? `<div class="nextmed"><div class="t">오늘 약을 다 드셨어요</div></div>`
-    : `<div class="nextmed"><div class="t"><small>다음 약 · ${esc(meds[i].when)}</small>${esc(meds[i].name.split(' · ')[0])}</div><button onclick="takeMed(${i})">먹었어요</button></div>`;
-  $('medList').innerHTML = meds.map((m,i) => `
+  $('nextMed').innerHTML = !meds.length
+    ? `<div class="nextmed"><div class="t"><small>약 알림</small>드시는 약을 넣어 주세요</div><button onclick="openAddMed()">약 넣기</button></div>`
+    : i < 0
+      ? `<div class="nextmed"><div class="t">오늘 약을 다 드셨어요</div></div>`
+      : `<div class="nextmed"><div class="t"><small>다음 약 · ${esc(meds[i].when)}</small>${esc(meds[i].name)}</div><button onclick="takeMed(${i})">먹었어요</button></div>`;
+  $('medList').innerHTML = !meds.length
+    ? `<div class="box box-green">아직 넣은 약이 없어요.<br>아래 <b>약 추가하기</b>를 눌러 드시는 약을 넣어 주세요.</div>`
+    : meds.map((m,i) => `
     <div class="med${m.taken?' done':''}">
       <div class="when">${esc(m.when)}</div>
       <div class="name">${esc(m.name)}</div>
-      ${m.taken
-        ? `<button class="btn" disabled>✓ ${esc(m.taken)}에 드셨어요</button>`
-        : `<button class="btn btn-green" onclick="takeMed(${i})">먹었어요</button>`}
+      <div class="two">
+        ${m.taken
+          ? `<button class="btn" disabled>✓ ${esc(m.taken)}에 드셨어요</button>`
+          : `<button class="btn btn-green" onclick="takeMed(${i})">먹었어요</button>`}
+        <button class="btn btn-white" onclick="askDelMed(${i})">지우기</button>
+      </div>
     </div>`).join('');
 }
 function takeMed(i){
   const d = new Date();
   meds[i].taken = `${d.getHours()}시 ${String(d.getMinutes()).padStart(2,'0')}분`;
-  renderMeds(); toast('드신 것으로 기록했어요');
+  meds[i].day = todayKey();
+  saveMeds(); renderMeds(); toast('드신 것으로 기록했어요');
+}
+function askDelMed(i){
+  const m = meds[i]; if (!m) return;
+  stack.length = 0;
+  push(() => show(`<div class="fit">
+    <h1>이 약을 지울까요?</h1>
+    <div class="box box-amber"><b>${esc(m.when)}</b><br>${esc(m.name)}</div>
+    <div class="pair grow">
+      <button class="btn btn-red" onclick="delMed(${i})">지우기</button>
+      <button class="btn btn-white" onclick="closeFlow(); go('me')">그대로 두기</button>
+    </div></div>`));
+}
+function delMed(i){
+  meds.splice(i, 1); saveMeds(); renderMeds(); closeFlow(); go('me'); toast('약을 지웠어요');
 }
 let newSlot = '';
 function openAddMed(){
@@ -1179,10 +1225,55 @@ function saveMed(){
   const name = $('medName').value.trim();
   if (!name){ $('medErr').textContent = '약 이름을 적어 주세요.'; $('medName').focus(); return; }
   if (!newSlot){ $('medErr').textContent = '언제 드시는지 아래에서 골라 주세요.'; return; }
-  meds.push({ when:newSlot, name, taken:null }); renderMeds(); closeFlow(); go('me'); toast('약을 추가했어요');
+  meds.push({ when:newSlot, name, taken:null, day:null }); saveMeds(); renderMeds(); closeFlow(); go('me'); toast('약을 추가했어요');
 }
+/* ---------- 홈 화면에 추가 ---------- */
+let installEvt = null;
+const UA = navigator.userAgent;
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+const isKakao = () => /KAKAOTALK/i.test(UA);
+const isSamsung = () => /SamsungBrowser/i.test(UA);
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; renderInstall(); toast('홈 화면에 "곁에"를 넣었어요'); });
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+function renderInstall(){
+  const el = $('installBox'); if (!el) return;
+  el.innerHTML = isStandalone()
+    ? `<div class="box box-green"><b>홈 화면에서 열려 있어요.</b><br>다음부터 휴대폰 첫 화면의 <b>곁에</b> 아이콘을 누르면 바로 열려요.</div>`
+    : `<button class="btn btn-big installbtn" onclick="installApp()">홈 화면에 추가하기</button>
+       <p class="note" style="margin-top:6px">휴대폰 첫 화면에 <b>곁에</b> 아이콘이 생겨요. 누르면 바로 열려요.</p>`;
+}
+async function installApp(){
+  if (installEvt) {
+    const e = installEvt; installEvt = null;
+    e.prompt();
+    try { const r = await e.userChoice; if (r && r.outcome !== 'accepted') { installEvt = null; toast('다음에 다시 누르면 넣을 수 있어요'); } } catch(err) {}
+    renderInstall(); return;
+  }
+  let title = '이렇게 넣어 주세요', steps;
+  if (isKakao()) {
+    title = '카카오톡 안에서는 넣을 수 없어요';
+    steps = ['화면 오른쪽 아래(또는 위)의 <b>점 세 개</b>를 누르세요', '<b>다른 브라우저로 열기</b>를 누르세요', '열린 화면에서 <b>내 정보 → 홈 화면에 추가하기</b>를 다시 누르세요'];
+  } else if (isIOS()) {
+    steps = ['화면 아래(또는 위)의 <b>공유 버튼</b>(네모에 위쪽 화살표)을 누르세요', '목록을 올려서 <b>홈 화면에 추가</b>를 누르세요', '오른쪽 위 <b>추가</b>를 누르세요'];
+  } else if (isSamsung()) {
+    steps = ['화면 아래 <b>줄 세 개(메뉴)</b>를 누르세요', '<b>현재 페이지 추가</b>를 누르세요', '<b>홈 화면</b>을 고르세요'];
+  } else {
+    steps = ['화면 오른쪽 위 <b>점 세 개</b>를 누르세요', '<b>홈 화면에 추가</b> 또는 <b>앱 설치</b>를 누르세요', '<b>추가</b>(설치)를 누르세요'];
+  }
+  stack.length = 0;
+  push(() => show(`<div class="fit">
+    <h1>${title}</h1>
+    <ol class="steps">${steps.map(t => `<li>${t}</li>`).join('')}</ol>
+    <button class="btn btn-green btn-big" onclick="closeFlow(); go('me')">알겠어요</button>
+    <p class="note">휴대폰 첫 화면에 <b>곁에</b> 아이콘이 생기면 다 된 거예요.</p>
+  </div>`));
+}
+
 renderMeds();
 renderContacts();
+renderInstall();
 document.body.dataset.page = 'help';
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('flow').hidden) back(); });
